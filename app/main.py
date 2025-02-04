@@ -15,14 +15,13 @@ import json
 
 logging.basicConfig(level=logging.INFO)
 
-init_db()
-
 def load_config():
     with open('config.json', 'r') as config_file:
         config = json.load(config_file)
     return config
 
 config = load_config()
+init_db(config['database_path'])
 
 # Initialize chat history in session state if not already present
 if 'messages' not in st.session_state:

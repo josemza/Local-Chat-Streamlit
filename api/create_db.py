@@ -1,7 +1,7 @@
 import sqlite3
 
-def init_db():
-    conn = sqlite3.connect('D:\Proyectos_python\Portafolio_LLM\Local-Chat-Streamlit\database\local-chat-streamlit.db')
+def init_db(path):
+    conn = sqlite3.connect(path)
     c = conn.cursor()
 
     # Creamos la tabla si no existe
