@@ -1,0 +1,30 @@
+# Bytecode de Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Entornos virtuales
+venv/
+env/
+
+# Archivos de configuración personal
+app/config.json
+app/pruebas.py
+*.cfg
+
+# Base de datos
+database/*.db
+database/*.sqlite
+database/*.sqlite3
+
+# Logs y datos temporales
+*.log
+temp/
+
+# Carpetas del IDE
+.idea/
+.vscode/
+*.sublime-workspace
+
+# Archivos de dependencias de pip
+pip-wheel-metadata/
