@@ -11,41 +11,25 @@ import time
 from llama_index.llms.ollama import Ollama
 import sqlite3
 from api.create_db import init_db
+from api.messages_db import get_messages, add_message
 import json
 
 logging.basicConfig(level=logging.INFO)
 
+# Load configurations
 def load_config():
     with open('config.json', 'r') as config_file:
         config = json.load(config_file)
     return config
 
 config = load_config()
+
+# Create a database if doesn't exist
 init_db(config['database_path'])
 
 # Initialize chat history in session state if not already present
 if 'messages' not in st.session_state:
     st.session_state.messages = []
-
-def add_message(user, message):
-    conn = sqlite3.connect(config['database_path'])
-    c = conn.cursor()
-    c.execute("INSERT INTO messages (user, message) VALUES (?, ?)", (user, message))
-    conn.commit()
-    conn.close()
-
-def get_messages(limit=4,all=True):
-    conn = sqlite3.connect(config['database_path'])
-    c = conn.cursor()
-    if all:
-        c.execute("SELECT timestamp, user, message FROM messages ORDER BY id DESC")
-    else:
-        c.execute("SELECT timestamp, user, message FROM messages ORDER BY id DESC LIMIT ?", (limit,))
-    rows = c.fetchall()
-    conn.close()
-    # Convertir las tuplas a diccionarios
-    messages = [{'timestamp': row[0], 'user': row[1], 'message': row[2]} for row in rows]
-    return messages[::-1]
 
 # Function to stream chat response based on selected model
 def stream_chat(model, messages):
@@ -72,7 +56,7 @@ def main():
     st.title("JosMan Chat")  # Set the title of the Streamlit app
     logging.info("App started")  # Log that the app has started
 
-    messages = get_messages()
+    messages = get_messages(path_db=config['database_path'])
     for message in messages:
         with st.chat_message(message['user']):
             st.write(f"{message['message']}")
@@ -83,7 +67,7 @@ def main():
 
     # Prompt for user input and save to chat history
     if prompt := st.chat_input("Your question"):
-        add_message("user",prompt)
+        add_message("user",prompt,config['database_path'])
         st.session_state.messages.append({"role": "user", "content": prompt})
         logging.info(f"User input: {prompt}")
 
@@ -101,11 +85,11 @@ def main():
                 with st.spinner("Writing..."):
                     try:
                         # Update promt including context from 3 last messages
-                        context_messages = get_messages(limit=4,all=False)
+                        context_messages = get_messages(path_db=config['database_path'],limit=4,all=False)
                         # Prepare messages for the LLM and stream the response
                         messages = [ChatMessage(role=msg["user"], content=msg["message"]) for msg in context_messages] #st.session_state.messages]
                         response_message = stream_chat(model, messages)
-                        add_message("assistant",response_message)
+                        add_message("assistant",response_message,config['database_path'])
                         duration = time.time() - start_time  # Calculate the duration
                         response_message_with_duration = f"{response_message}\n\nDuration: {duration:.2f} seconds"
                         st.session_state.messages.append({"role": "assistant", "content": response_message_with_duration})
